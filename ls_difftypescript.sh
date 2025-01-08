@@ -64,29 +64,23 @@ echo " the first and last ls -l output within a given typescript file "
 echo
 echo " --------------------------------------------- "
 
-#display all outputs
-# echo "All outputs:"
-# echo "$ls_outputs"
-# echo
+# Extract deleted and added files from diff output
+deleted_files=$(echo "$diff_output" | grep "^-" | grep -v "^---" | awk '{print $NF}')
+added_files=$(echo "$diff_output" | grep "^+" | grep -v "^+++" | awk '{print $NF}')
 
-# display first ls -l output
-echo "First ls -l output:"
-echo "$first_output"
-echo
-
-# display last ls -l output
-echo "Last ls -l output:"
-echo "$last_ls_output"
-echo
-
-
-# Display the diff output
-echo "Diff output between first and last ls -l outputs:"
-if [[ -z "$diff_output" ]] ; then
-    echo "There is no difference between the two"
+# Display deleted and added files in a user-friendly format
+echo "Deleted files:"
+if [ -z "$deleted_files" ]; then
+    echo "No deleted files."
 else
-    echo "$diff_output"
+    echo "$deleted_files"
 fi
 
+echo
 
-
+echo "Added files:"
+if [ -z "$added_files" ]; then
+    echo "No added files."
+else
+    echo "$added_files"
+fi
