@@ -22,7 +22,7 @@ cat "$typescript_file" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' > "$cleaned_file"
 ls_outputs=$(awk '{if (/ls -l/) print "ls -l"; else print}' "$cleaned_file")
 
 # get the first ls -l output block
-first_output=$(echo "$ls_outputs" | awk 'BEGIN {found=0} /ls -l/ && !found {found=1; print; next} found && /ls -l/ {exit} found && /floron@/ {exit} found {print}')
+first_output=$(echo "$ls_outputs" | awk 'BEGIN {found=0} /ls -l/ && !found {found=1; print; next} found && /ls -l/ {exit} found && /@/ {exit} found {print}')
 
 # Variable to hold the output of the last ls -l command
 last_ls_output=""
@@ -35,7 +35,7 @@ while IFS= read -r line; do
         last_ls_output=$(echo "$ls_outputs" | awk -v start_line="$current_line" '
         NR >= start_line && !found && /ls -l/ {found=1; print; next}
         NR >= start_line && found && /ls -l/ {exit}
-        NR >= start_line && found && /floron@/ {exit}
+        NR >= start_line && found && /@/ {exit}
         NR >= start_line && found {print}
         END {if (found) print "EOF reached"; exit}')
     fi
@@ -54,7 +54,20 @@ last_ls_output=$(echo "$last_ls_output" | sed '1,2d')
 last_ls_output=$(echo "$last_ls_output" | sed '/EOF reached/d')
 
 # Storing the difference between first and last ls -l outputs
-diff_output=$(diff -u <(echo "$first_output") <(echo "$last_ls_output"))
+diff_output=$(diff -u -U0 <(echo "$first_output") <(echo "$last_ls_output"))
+
+# explaining what this script does
+echo " --------------------------------------------- "
+echo
+echo " This script analyses the evolution of the file structure by comparing "
+echo " the first and last ls -l output within a given typescript file "
+echo
+echo " --------------------------------------------- "
+
+#display all outputs
+# echo "All outputs:"
+# echo "$ls_outputs"
+# echo
 
 # display first ls -l output
 echo "First ls -l output:"
@@ -66,9 +79,14 @@ echo "Last ls -l output:"
 echo "$last_ls_output"
 echo
 
+
 # Display the diff output
 echo "Diff output between first and last ls -l outputs:"
-echo "$diff_output"
+if [[ -z "$diff_output" ]] ; then
+    echo "There is no difference between the two"
+else
+    echo "$diff_output"
+fi
 
 
 
