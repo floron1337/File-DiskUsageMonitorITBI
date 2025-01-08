@@ -9,14 +9,23 @@ fi
 typescript_file="$1"
 
 # Check if the file exists
-if [ ! -f "$typescript_file" ]; then
-    echo "Error: File '$typescript_file' not found."
+# if [ ! -f "$typescript_file" ]; then
+#     echo "Error: File '$typescript_file' not found."
+#     exit 1
+# fi
+
+# Attempt to locate the typescript file
+typescript_path=$(find "$PWD" / -type f -name "$typescript_file" 2>/dev/null | head -n 1)
+
+# Check if the file was found
+if [ -z "$typescript_path" ]; then
+    echo "Error: File '$typescript_file' not found in the file system."
     exit 1
 fi
 
 # Clean the file to remove escape sequences and terminal artifacts
 cleaned_file=$(mktemp)
-cat "$typescript_file" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' > "$cleaned_file"
+cat "$typescript_path" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' > "$cleaned_file"
 
 # Extract outputs of all commands
 ls_outputs=$(awk '{if (/ls -l/) print "ls -l"; else print}' "$cleaned_file")
@@ -53,8 +62,14 @@ last_ls_output=$(echo "$last_ls_output" | sed '1,2d')
 # Remove the "EOF reached" message from last_ls_output if it exists
 last_ls_output=$(echo "$last_ls_output" | sed '/EOF reached/d')
 
-# get the current "ls -l" output
-current_ls_output=$(ls -l)
+# get the folder that holds the typescript file
+typescript_dir=$(dirname "$(realpath "$typescript_path")")
+
+# get the current "ls -l" output in that folder
+current_ls_output=$(ls -l "$typescript_dir")
+
+# delete first line of current "ls -l" output
+current_ls_output=$(echo "$current_ls_output" | sed '1d')
 
 # Storing the difference between first and last ls -l outputs
 diff_output=$(diff -u -U0 <(echo "$first_output") <(echo "$last_ls_output"))
@@ -77,24 +92,27 @@ added_files=$(echo "$diff_output" | grep "^+" | grep -v "^+++" | awk '{print $NF
 # Display deleted and added files in a user-friendly format
 echo 
 echo " --- Difference between first and last ls -l output in this typescript file ---"
-echo " Deleted files:"
+echo
+echo "Deleted files:"
 if [ -z "$deleted_files" ]; then
-    echo " No deleted files."
+    echo "No deleted files."
 else
-    echo " $deleted_files"
+    echo "$deleted_files"
 fi
 
 echo
 
-echo " Added files:"
+echo "Added files:"
 if [ -z "$added_files" ]; then
-    echo " No added files."
+    echo "No added files."
 else
-    echo " $added_files"
+    echo "$added_files"
 fi
 
 echo 
 
 echo " --- Difference between the last ls -l command in this typescript file ---"
-echo " --- and the current moment ---"
+echo " --- and the current ls -l command ---"
+echo
 echo " $diff_output_last_current"
+
