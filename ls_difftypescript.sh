@@ -53,8 +53,14 @@ last_ls_output=$(echo "$last_ls_output" | sed '1,2d')
 # Remove the "EOF reached" message from last_ls_output if it exists
 last_ls_output=$(echo "$last_ls_output" | sed '/EOF reached/d')
 
+# get the current "ls -l" output
+current_ls_output=$(ls -l)
+
 # Storing the difference between first and last ls -l outputs
 diff_output=$(diff -u -U0 <(echo "$first_output") <(echo "$last_ls_output"))
+
+# Store de difference between last  ls -l output in the typescript file and the current ls -l output
+diff_output_last_current=$(diff -u -U0 <(echo "$last_ls_output") <(echo "$current_ls_output"))
 
 # explaining what this script does
 echo " --------------------------------------------- "
@@ -69,18 +75,26 @@ deleted_files=$(echo "$diff_output" | grep "^-" | grep -v "^---" | awk '{print $
 added_files=$(echo "$diff_output" | grep "^+" | grep -v "^+++" | awk '{print $NF}')
 
 # Display deleted and added files in a user-friendly format
-echo "Deleted files:"
+echo 
+echo " --- Difference between first and last ls -l output in this typescript file ---"
+echo " Deleted files:"
 if [ -z "$deleted_files" ]; then
-    echo "No deleted files."
+    echo " No deleted files."
 else
-    echo "$deleted_files"
+    echo " $deleted_files"
 fi
 
 echo
 
-echo "Added files:"
+echo " Added files:"
 if [ -z "$added_files" ]; then
-    echo "No added files."
+    echo " No added files."
 else
-    echo "$added_files"
+    echo " $added_files"
 fi
+
+echo 
+
+echo " --- Difference between the last ls -l command in this typescript file ---"
+echo " --- and the current moment ---"
+echo " $diff_output_last_current"
