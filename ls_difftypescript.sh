@@ -8,12 +8,6 @@ fi
 
 typescript_file="$1"
 
-# Check if the file exists
-# if [ ! -f "$typescript_file" ]; then
-#     echo "Error: File '$typescript_file' not found."
-#     exit 1
-# fi
-
 # Attempt to locate the typescript file
 typescript_path=$(find "$PWD" / -type f -name "$typescript_file" 2>/dev/null | head -n 1)
 
